@@ -1,59 +1,51 @@
 # technical_challenge_instaleap
-Inicialización del proyecto
+Descripción del proyecto
 
-Se realizó la configuración inicial del proyecto utilizando Node.js v24.14.0, Express.js 5.2.1 y TypeScript v5.9.3, estableciendo una base sólida, tipada y preparada para escalabilidad.
+Este proyecto consiste en el desarrollo de una API RESTful para la gestión de tareas, construida utilizando Node.js, Express.js y TypeScript.
 
-Configuración inicial
-Inicialización del proyecto con `npm init`
-Instalación de dependencias principales:
-Express para la creación del servidor HTTP
-Instalación de dependencias de desarrollo:
-  * TypeScript para tipado estático
-  * ts-node-dev para ejecución en entorno de desarrollo
-  * Tipos de Node y Express (`@types/node`, `@types/express`)
-* Configuración de `tsconfig.json` orientada a entorno backend
-* Definición de scripts de ejecución para desarrollo y producción
+El objetivo principal es implementar un backend robusto, escalable y mantenible, aplicando buenas prácticas de desarrollo, tipado estático y una organización clara del código.
 
-Arquitectura del proyecto
+Arquitectura
 
-Se implementó una arquitectura en capas (Layered Architecture) con el objetivo de mantener una clara separación de responsabilidades y facilitar la mantenibilidad del sistema.
+El proyecto está basado en una arquitectura en capas (Layered Architecture), la cual permite una separación clara de responsabilidades entre los distintos componentes del sistema.
 
-Estructura base
+- API (routes & middlewares): Maneja la entrada de solicitudes HTTP y define los endpoints de la aplicación.
+- Controllers: Gestionan la interacción entre las solicitudes entrantes y la lógica de negocio.
+- Services: Contienen la lógica de negocio principal y las reglas del sistema.
+-  Persistence: Encargada de la comunicación con la base de datos.
 
-```
-src/
-  api/
-    routes/
-    middlewares/
-  controllers/
-  services/
-  persistence/
-  app.ts
-  server.ts
-```
+Esta arquitectura permite escalar el sistema de manera ordenada, facilita el mantenimiento del código y mejora la capacidad de realizar pruebas unitarias, al mantener cada componente desacoplado.
 
-Justificación de la arquitectura
 
-La elección de una arquitectura en capas responde a la necesidad de construir un sistema:
+Instalación local
 
-Escalable: Permite agregar nuevas funcionalidades sin afectar otras partes del sistema.
-Mantenible: Cada capa tiene una responsabilidad clara, facilitando la lectura y modificación del código.
-Testeable: La separación de lógica permite realizar pruebas unitarias de manera aislada.
-Desacoplado: Reduce la dependencia entre componentes, facilitando cambios futuros (por ejemplo, cambiar la base de datos o framework).
+Sigue los siguientes pasos para ejecutar el proyecto en un entorno local.
 
-Separación de responsabilidades
+1. Clonar el repositorio
 
-API (routes & middlewares)
-  Maneja la entrada de solicitudes HTTP y define los endpoints del sistema.
+bash
+git clone https://github.com/KennyMls11/technical_challenge_instaleap.git
+cd technical_challenge_instaleap
 
-Controllers
-  Actúan como intermediarios entre la capa de entrada y la lógica de negocio.
+2. Instalar dependencias
 
-Services
-  Contienen la lógica de negocio principal y reglas del sistema.
+bash
+npm install
 
-Persistence
-  Encargada de la comunicación con la base de datos, aislando el acceso a datos del resto de la aplicación.
+3. Ejecutar el proyecto en modo desarrollo
 
- Enfoque
-Desde el inicio, el proyecto fue diseñado con un enfoque cercano a entornos productivos, priorizando buenas prácticas, organización del código y preparación para futuras integraciones como autenticación, base de datos y despliegue.
+bash
+npm run dev
+
+4. Acceder a la API
+
+Una vez iniciado el servidor, la API estará disponible en:
+
+http://localhost:3000
+
+ Scripts disponibles
+
+- npm run dev: Ejecuta el proyecto en modo desarrollo con recarga automática.
+- npm run build: Compila el código TypeScript a JavaScript.
+- npm start: Ejecuta la aplicación en entorno de producción.
+
