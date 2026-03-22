@@ -85,6 +85,14 @@ http://localhost:3000/health
 
 Debe responder: `{ "status": "ok" }`
 
+### 7. Documentación de la API
+
+Con el servidor corriendo, la documentación interactiva de Swagger está disponible en:
+
+```
+http://localhost:3000/api/docs
+```
+
 ---
 
 ## Scripts disponibles
