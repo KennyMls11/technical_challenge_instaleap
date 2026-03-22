@@ -23,29 +23,44 @@ Sigue los siguientes pasos para ejecutar el proyecto en un entorno local.
 
 1. Clonar el repositorio
 
-bash
+```bash
 git clone https://github.com/KennyMls11/technical_challenge_instaleap.git
 cd technical_challenge_instaleap
+```
 
 2. Instalar dependencias
 
-bash
+```bash
 npm install
+```
 
-3. Ejecutar el proyecto en modo desarrollo
+3. Configurar variables de entorno
 
-bash
+Copia el archivo de ejemplo y completa los valores según tu entorno:
+
+```bash
+cp .env.example .env
+```
+
+Las variables disponibles están documentadas en `.env.example`.
+
+4. Ejecutar el proyecto en modo desarrollo
+
+```bash
 npm run dev
+```
 
-4. Acceder a la API
+5. Acceder a la API
 
 Una vez iniciado el servidor, la API estará disponible en:
 
+```
 http://localhost:3000
+```
 
- Scripts disponibles
+Scripts disponibles
 
-- npm run dev: Ejecuta el proyecto en modo desarrollo con recarga automática.
-- npm run build: Compila el código TypeScript a JavaScript.
-- npm start: Ejecuta la aplicación en entorno de producción.
+- `npm run dev`: Ejecuta el proyecto en modo desarrollo con recarga automática.
+- `npm run build`: Compila el código TypeScript a JavaScript.
+- `npm start`: Ejecuta la aplicación en entorno de producción.
 
