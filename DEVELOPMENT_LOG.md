@@ -36,7 +36,7 @@ Estas herramientas permiten construir una base sólida desde las primeras etapas
 
 ---
 
-## Fase 2 — Gestión de variables de entorno (2026-03-21)
+## Fase 2 — Gestión de variables de entorno 
 
 ### ¿Qué hice y por qué?
 
@@ -59,6 +59,40 @@ La idea es simple pero importante: los valores sensibles como contraseñas o cla
 
 El Singleton es un patrón de diseño que garantiza que una clase tenga una única instancia durante toda la ejecución del programa. En este caso lo apliqué a la configuración: en vez de llamar a `dotenv.config()` en múltiples archivos (lo cual sería repetitivo y propenso a errores), lo hago una sola vez en `env.ts` y desde ahí cualquier parte del código puede importar esa instancia y acceder a las variables que necesite.
 
+### Cómo funciona el Singleton en la práctica
+
+La clase `EnvConfig` tiene el constructor marcado como `private`, lo que significa que nadie desde afuera puede hacer `new EnvConfig()`. La única forma de obtener la instancia es llamando a `EnvConfig.getInstance()`. La primera vez que se llama, crea el objeto y lo guarda internamente; las siguientes veces simplemente devuelve ese mismo objeto sin crearlo de nuevo.
+
+Al final del archivo exporto directamente la instancia lista para usar:
+
+```ts
+export const envConfig = EnvConfig.getInstance();
+```
+
+Así, en cualquier otro archivo del proyecto solo necesito importar `envConfig` y acceder a la propiedad que necesite, por ejemplo `envConfig.port` o `envConfig.jwtSecret`.
+
+### Archivos de configuración creados
+
+- **`.gitignore`** — le indica a Git qué archivos ignorar. Agregué `.env`, `node_modules/` y `dist/` para que nunca lleguen al repositorio.
+- **`.env.example`** — plantilla pública con todas las variables necesarias pero sin valores reales. Cualquiera que clone el proyecto sabe exactamente qué debe configurar.
+- **`.env`** — archivo local con los valores reales para mi entorno de desarrollo. No se sube al repositorio gracias al `.gitignore`.
+- **`src/config/env.ts`** — la clase Singleton que centraliza toda la configuración.
+
+### Variables de entorno definidas
+
+| Variable | Para qué sirve |
+|---|---|
+| `PORT` | Puerto en el que corre el servidor Express |
+| `NODE_ENV` | Entorno de ejecución (`development` / `production`) |
+| `DB_HOST` | Host donde corre PostgreSQL (en este caso, Docker) |
+| `DB_PORT` | Puerto de PostgreSQL |
+| `DB_USER` | Usuario de la base de datos |
+| `DB_PASSWORD` | Contraseña de la base de datos |
+| `DB_NAME` | Nombre de la base de datos |
+| `JWT_SECRET` | Clave secreta para firmar y verificar los tokens JWT |
+| `JWT_EXPIRES_IN` | Tiempo de vida del token (ej. `1h`) |
+
+---
 
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
