@@ -18,6 +18,10 @@
     "strict": true,
     "skipLibCheck": true,
 
+    /* 🎨 Decoradores (requerido por TypeORM) */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
     /* 🧪 Debug */
     "sourceMap": true
   },

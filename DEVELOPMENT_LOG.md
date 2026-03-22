@@ -94,6 +94,62 @@ Así, en cualquier otro archivo del proyecto solo necesito importar `envConfig` 
 
 ---
 
+---
+
+## Fase 3 — Infraestructura base (Docker + TypeORM + Express)
+
+### ¿Qué hice y por qué?
+
+Con las variables de entorno listas, el siguiente paso lógico era levantar la base de datos y conectar todo antes de escribir cualquier lógica de negocio. No tiene sentido construir el CRUD de tareas si primero no tengo claro que la conexión a la BD funciona.
+
+### Docker y docker-compose.yml
+
+Decidí no instalar PostgreSQL directamente en mi máquina. En lugar de eso, lo levanté como un contenedor Docker usando un archivo `docker-compose.yml`. Esto tiene varias ventajas: el entorno queda aislado, cualquier persona que clone el proyecto puede tener la base de datos corriendo con un solo comando (`docker-compose up -d`), y no ensucia mi máquina con instalaciones globales.
+
+El archivo lee las credenciales directamente desde el `.env` usando interpolación de variables — no hay valores hardcodeados. Usé la imagen `postgres:16-alpine` porque es liviana y estable. También configuré un volumen nombrado (`postgres_data`) para que los datos no se pierdan cada vez que se baje el contenedor.
+
+### Dependencias instaladas
+
+En esta fase instalé todas las dependencias que el proyecto va a necesitar:
+
+- **typeorm** — ORM para manejar la conexión y las consultas a PostgreSQL.
+- **pg** — driver de PostgreSQL para Node.js, requerido internamente por TypeORM.
+- **reflect-metadata** — librería requerida por TypeORM para que sus decoradores funcionen en tiempo de ejecución.
+- **bcrypt** — para hashear contraseñas antes de guardarlas en la BD.
+- **jsonwebtoken** — para generar y verificar los tokens JWT de autenticación.
+- **ajv** — para validar los datos que llegan a la API usando esquemas JSON.
+- **swagger-ui-express** y **swagger-jsdoc** — para generar y servir la documentación de la API.
+
+### Ajuste en tsconfig.json
+
+TypeORM usa decoradores de TypeScript (`@Entity`, `@Column`, `@PrimaryGeneratedColumn`, etc.) para definir las entidades de la base de datos. Para que esos decoradores funcionen correctamente, es necesario activar dos opciones en el compilador:
+
+- `experimentalDecorators: true` — habilita el soporte de decoradores.
+- `emitDecoratorMetadata: true` — permite que TypeORM lea los tipos de las propiedades en tiempo de ejecución.
+
+Sin estas dos opciones, TypeORM simplemente no funciona.
+
+### src/config/database.ts
+
+Creé este archivo como el punto único de configuración de la conexión a la base de datos. Usa la API moderna de TypeORM (`DataSource`) y consume las variables directamente desde `envConfig`, sin acceder a `process.env` en ningún otro lugar.
+
+Dos decisiones importantes aquí:
+- `synchronize: true` solo en `development` — esto le dice a TypeORM que cree o actualice las tablas automáticamente según las entidades definidas. En producción esto nunca debe activarse porque podría destruir datos.
+- `logging: true` solo en `development` — muestra en consola las queries SQL que genera TypeORM, lo que es útil para depurar pero genera ruido innecesario en producción.
+
+### src/app.ts y src/server.ts
+
+Separé la configuración de Express (`app.ts`) del arranque del servidor (`server.ts`). Esta separación es intencional:
+
+- `app.ts` solo sabe de Express: monta middlewares y rutas. No conoce el puerto ni la base de datos.
+- `server.ts` es el punto de entrada real: primero inicializa la conexión a la BD y, solo si eso funciona, levanta el servidor HTTP.
+
+Este orden importa. Si el servidor arrancara antes de que la BD esté lista, podría recibir peticiones sin poder responderlas correctamente. Además, si la conexión falla, `process.exit(1)` garantiza que el proceso termina con un código de error, lo que permite que Docker o cualquier gestor de procesos detecte el fallo y actúe.
+
+También agregué un endpoint `/health` en `app.ts`. Es una práctica estándar en APIs: un endpoint simple que no tiene lógica de negocio y solo responde `{ "status": "ok" }`, usado para verificar que el servidor está corriendo.
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
