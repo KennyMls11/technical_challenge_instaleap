@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import { errorHandler } from './api/middlewares/errorHandler';
 import authRouter from './api/routes/auth.routes';
+import taskRouter from './api/routes/task.routes';
 
 /**
  * Instancia de Express con middlewares base configurados.
@@ -18,7 +19,7 @@ app.get('/health', (_req, res) => {
 
 // Rutas de la API
 app.use('/api/v1/auth', authRouter);
-// app.use('/api/v1/tasks', taskRoutes); // próximo paso
+app.use('/api/v1/tasks', taskRouter);
 
 // Manejo de errores — debe ir siempre al final
 app.use(errorHandler);

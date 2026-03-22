@@ -333,6 +333,88 @@ Revisé que la cadena de responsabilidades fuera correcta en cada archivo: el re
 
 ---
 
+## Fase 7 — CRUD de tareas
+
+Con la autenticación lista, el siguiente bloque fue implementar las operaciones básicas sobre tareas: crear, listar, obtener, actualizar y eliminar. Esta es la funcionalidad central del challenge.
+
+### ¿Qué construí y por qué en ese orden?
+
+Seguí el mismo orden de capas que en la autenticación, de adentro hacia afuera: primero los datos, luego la lógica, luego la validación, luego el controller, y por último las rutas.
+
+**`task.repository.ts`** — Acá definí cinco métodos: obtener todas las tareas de un usuario, buscar una tarea por ID, crear una tarea nueva, actualizar campos específicos de una tarea existente, y eliminar una tarea. Igual que con el repositorio de usuarios, usé el patrón `.extend()` de TypeORM para no crear clases innecesarias. El método `updateTask` recibe un objeto `Partial<>`, es decir, solo los campos que cambiaron — así no tengo que reescribir todos los datos si solo cambio el título.
+
+**`task.service.ts`** — Acá está toda la lógica de negocio. Lo más importante de este archivo es la verificación de propiedad: antes de retornar, actualizar o eliminar una tarea, el servicio verifica que esa tarea le pertenezca al usuario autenticado. Si no existe lanza un `NotFoundError` (404), y si existe pero es de otro usuario lanza un `AuthorizationError` (403). Esta distinción es intencional: no es lo mismo que algo no exista a que no tengas permiso para verlo.
+
+**`task.validator.ts`** — Usé AJV igual que en la autenticación. Para la creación, los tres campos son obligatorios (`titulo`, `descripcion`, `fecha_vencimiento`). Para la actualización, todos son opcionales, pero agregué `minProperties: 1` para que no tenga sentido enviar un body vacío y que eso pase como una actualización válida.
+
+**`task.controller.ts`** — Completamente liviano, igual que el de auth. Extrae el `userId` de `req.user` (que el middleware JWT ya inyectó), extrae el resto de datos del body o de los params, llama al servicio y responde.
+
+**`task.routes.ts`** — Acá apliqué el middleware `authenticate` a nivel de router completo con `taskRouter.use(authenticate)`, lo que significa que todos los endpoints de tareas requieren token JWT. No tuve que poner el middleware en cada ruta individualmente.
+
+**`app.ts`** — Monté el `taskRouter` en `/api/v1/tasks` y eliminé el comentario que lo marcaba como "próximo paso".
+
+### Dependencias utilizadas
+
+No fue necesario instalar dependencias nuevas para esta fase. Todo se construyó sobre las herramientas ya configuradas: TypeORM, AJV, Express y los tipos de error propios del proyecto.
+
+---
+
+### Uso 5 — CRUD de tareas completo
+
+**Prompt utilizado:**
+> "empecemos con el CRUD de tareas"
+
+La estructura de implementación fue acordada en la sesión anterior: repository → service → validator → controller → routes → app.ts. Claude ejecutó ese orden y respetó las restricciones de arquitectura ya establecidas (services sin Express, controllers livianos, persistence solo acceso a datos).
+
+**Qué se aceptó y por qué:**
+
+- **`task.repository.ts`** — métodos claros y aislados, cada uno con una sola responsabilidad. `updateTask` usa `Partial<Pick<>>` para que solo se actualicen los campos enviados sin romper los existentes.
+
+- **`task.service.ts`** — la verificación de propiedad antes de cada operación es la pieza más importante de este archivo. La separación entre 404 (no existe) y 403 (existe pero no es tuya) es una decisión deliberada y correcta: no son el mismo error y no deben tratarse igual.
+
+- **`task.validator.ts`** — la restricción `minProperties: 1` en el schema de actualización evita que un body vacío pase como una petición válida.
+
+- **`task.controller.ts`** — sigue el mismo patrón del controller de auth: sin lógica, sin condiciones, solo orquestación.
+
+- **`task.routes.ts`** — aplicar `authenticate` a nivel de router en lugar de en cada ruta individual es más limpio y menos propenso a errores (si olvidás proteger una ruta individual, queda expuesta).
+
+- **`app.ts`** — se eliminó el comentario `// app.use('/api/v1/tasks', taskRoutes); // próximo paso` y se reemplazó por la línea activa.
+
+**Qué se rechazó o modificó:**
+
+Nada en esta fase. La implementación respetó todas las restricciones arquitectónicas definidas desde el inicio del proyecto.
+
+---
+
+## Fase 8 — Pruebas de los endpoints con Postman
+
+Con el CRUD de tareas implementado, el siguiente paso fue probar todos los endpoints de forma manual usando Postman para verificar que el sistema respondiera correctamente en cada escenario posible.
+
+### Flujo de prueba
+
+El orden fue el siguiente: primero registrar un usuario nuevo, luego hacer login para obtener el token JWT, y después ejecutar cada endpoint de tareas usando ese token en el header `Authorization: Bearer <token>`.
+
+### Escenarios probados
+
+Se verificaron tanto los casos exitosos como los casos de error:
+
+- **Registro de usuario** → `201` con datos del usuario (sin password)
+- **Login con credenciales correctas** → `200` con `accessToken`
+- **Crear tarea** → `201` con todos los campos incluyendo `estado` y `fecha_vencimiento`
+- **Listar tareas** → `200` con array de tareas del usuario autenticado
+- **Obtener tarea por ID** → `200` con la tarea específica
+- **Actualizar tarea** → `200` con el campo `estado` modificado a `"en curso"`
+- **Eliminar tarea** → `200` con mensaje de confirmación
+- **Request sin token** → `401`
+- **Token inválido** → `401`
+- **Tarea inexistente** → `404`
+- **Email ya registrado** → `400`
+- **Contraseña incorrecta en login** → `401`
+- **Body vacío en update** → `400`
+- **Fecha con formato inválido** → `400`
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
