@@ -221,6 +221,82 @@ Creé la función `sendSuccess()` para estandarizar todas las respuestas exitosa
 
 ---
 
+## Uso de Asistentes de IA
+
+---
+
+### Uso 1 — Configuración de infraestructura base
+
+**Prompt utilizado:**
+> "Actúa como un desarrollador backend senior experto en Node.js, TypeScript y configuración de infraestructura, priorizando simplicidad, claridad y buenas prácticas sin sobreingeniería. Estoy desarrollando una API RESTful para un sistema de gestión de tareas como prueba técnica, usando Node.js, Express, TypeScript, arquitectura en capas y PostgreSQL con TypeORM. Ayúdame a configurar la infraestructura base: crear el docker-compose.yml para levantar PostgreSQL en Docker, instalar las dependencias que vienen (TypeORM, pg, bcrypt, jsonwebtoken, ajv, swagger) y configurar la conexión de TypeORM a la base de datos."
+
+**Qué se aceptó y por qué:**
+
+Se aceptó el plan general de implementación: la estructura del `docker-compose.yml`, los ajustes en `tsconfig.json` (`experimentalDecorators` y `emitDecoratorMetadata`), el contenido de `src/config/database.ts`, y la lógica de `src/app.ts` y `src/server.ts`. Todo esto fue correcto y coherente con la arquitectura que yo había definido desde el inicio. En particular, el orden de inicialización en `server.ts` — primero la base de datos, luego el servidor HTTP — fue una decisión que validé y entendí antes de aceptarla.
+
+**Qué se rechazó o modificó:**
+
+La instalación de dependencias la ejecuté yo manualmente desde la terminal, tanto las de producción como los tipos de TypeScript. El asistente propuso correr los comandos de forma automática, pero preferí hacerlo yo para tener control directo sobre lo que se instalaba y verificar que no hubiera errores en el proceso.
+
+También levanté la base de datos y arranqué el servidor por mi cuenta:
+```bash
+docker-compose up -d
+npm run dev
+```
+
+**Verificación realizada:**
+
+Confirmé que el servidor arrancara correctamente y que el endpoint `/health` respondiera `{ "status": "ok" }` en `http://localhost:3000/health`. También verifiqué que TypeORM lograra conectarse al contenedor de PostgreSQL y que los mensajes de consola fueran los esperados.
+
+---
+
+### Uso 2 — Diseño de entidades de base de datos
+
+**Prompt utilizado:**
+> "Ayúdame a diseñar las entidades principales: Entidad User con los campos id, nombre, email, password. Entidad Task con los campos id, titulo, descripcion, fecha_vencimiento, estado y su relación con User. Quiero que definas las entidades usando TypeORM en TypeScript, establezcas correctamente la relación OneToMany / ManyToOne, e incluyas buenas prácticas básicas como timestamps si lo consideras útil."
+
+**Qué se aceptó y por qué:**
+
+Se aceptaron ambas entidades tal como fueron generadas. La estructura es correcta: `@PrimaryGeneratedColumn`, `@Column` con sus opciones, `@CreateDateColumn` y `@UpdateDateColumn` para los timestamps automáticos, el `enum TaskStatus` para los estados de la tarea, y la relación `@OneToMany` / `@ManyToOne` bien establecida entre `User` y `Task`. También se aceptó `{ onDelete: 'CASCADE' }` en el `@ManyToOne` y el campo `userId` explícito en `Task`, decisiones que revisé y entendí antes de incorporarlas.
+
+**Qué se rechazó o modificó:**
+
+Se rechazó el siguiente fragmento sugerido para agregar dentro de `user.entity.ts`:
+
+```ts
+import bcrypt from 'bcrypt';
+
+@BeforeInsert()
+async hashPassword() {
+  this.password = await bcrypt.hash(this.password, 10);
+}
+```
+
+Lo rechacé porque mete lógica de negocio (el hasheo de la contraseña) directamente en la entidad, que pertenece a la capa de persistencia. En la arquitectura que definí desde el inicio, esa responsabilidad le corresponde al `AuthService`. Dejarlo en la entidad estaría mezclando capas, lo cual viola directamente las reglas que establecí. Además, si en algún momento necesito cambiar la librería de hasheo o los parámetros de bcrypt, no debería tener que modificar una entidad de base de datos para eso.
+
+**Verificación realizada:**
+
+Revisé que la relación entre entidades estuviera correctamente configurada en ambos lados (`tasks` en `User` y `user` en `Task`), que el enum tuviera exactamente los tres valores que exige la prueba (`pendiente`, `en curso`, `completada`), y que `unique: true` estuviera aplicado sobre el campo `email` para garantizar integridad a nivel de base de datos.
+
+---
+
+### Uso 3 — Manejo de errores y respuestas estandarizadas
+
+**Prompt utilizado:**
+> "Antes de los endpoints necesitamos el manejo de errores centralizado y las respuestas estandarizadas — todo lo demás los va a usar."
+
+**Qué se aceptó y por qué:**
+
+Le indiqué a Claude que implementara el manejo de errores antes de cualquier endpoint, porque desde el principio definí en el `CLAUDE.md` que todos los errores deben manejarse de forma centralizada y que todas las respuestas deben seguir un formato fijo. Esta no fue una sugerencia del asistente — fue una decisión de arquitectura que tomé desde el inicio del proyecto y que simplemente le pedí que ejecutara.
+
+Se aceptó la estructura de clases de error (`AppError` como base, con las subclases `NotFoundError`, `AuthenticationError`, `AuthorizationError` y `ValidationError`) porque respeta exactamente los códigos de estado que yo definí: 400, 401, 403 y 404. El middleware `errorHandler` también se aceptó tal como fue generado, porque sigue el formato de error que establecí desde el comienzo (`path`, `message`, `date`, `status`). Lo mismo aplica para la función `sendSuccess()`, que respeta el formato de respuesta exitosa que diseñé previamente.
+
+**Verificación realizada:**
+
+Revisé que el `errorHandler` recibiera los 4 parámetros requeridos por Express para ser reconocido como middleware de errores (`error, req, res, next`), y confirmé que está registrado al final de todos los middlewares en `app.ts`. También verifiqué que `sendSuccess()` incluye el campo `data` solo cuando se pasa un valor, evitando propiedades innecesarias en la respuesta.
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
