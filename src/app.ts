@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import { errorHandler } from './api/middlewares/errorHandler';
 
 /**
  * Instancia de Express con middlewares base configurados.
@@ -17,5 +18,8 @@ app.get('/health', (_req, res) => {
 // Rutas de la API (se descomentarán en los próximos pasos)
 // app.use('/api/v1/auth', authRoutes);
 // app.use('/api/v1/tasks', taskRoutes);
+
+// Manejo de errores — debe ir siempre al final
+app.use(errorHandler);
 
 export default app;

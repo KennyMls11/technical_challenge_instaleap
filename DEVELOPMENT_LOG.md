@@ -183,6 +183,44 @@ También incluí el campo `userId` en `Task` como columna explícita. Esto permi
 
 ---
 
+## Fase 5 — Manejo de errores y respuestas estandarizadas
+
+### ¿Qué hice y por qué?
+
+Antes de escribir cualquier endpoint decidí implementar el manejo de errores y el formato de respuestas. Esto no fue una sugerencia del asistente — fue una decisión propia basada en cómo diseñé el proyecto desde el inicio: en el `CLAUDE.md` ya había definido que todos los errores debían seguir un formato fijo y que todas las respuestas exitosas debían estandarizarse. No tiene sentido construir endpoints si no tengo claro cómo van a responder cuando algo sale bien o cuando algo falla.
+
+### Clases de error — `src/api/errors/AppError.ts`
+
+Creé una clase base `AppError` que extiende el `Error` nativo de JavaScript y le agrega el código de estado HTTP. De ella heredan cuatro clases específicas:
+
+- `NotFoundError` → 404, cuando no se encuentra un recurso (ej. una tarea que no existe).
+- `AuthenticationError` → 401, cuando las credenciales son inválidas o el token no está presente.
+- `AuthorizationError` → 403, cuando el usuario no tiene permisos para esa acción.
+- `ValidationError` → 400, cuando los datos enviados no son válidos.
+
+Esta estructura permite lanzar errores descriptivos desde cualquier capa del sistema (`throw new NotFoundError()`) y el middleware los captura y procesa automáticamente.
+
+### Middleware de errores — `src/api/middlewares/errorHandler.ts`
+
+Este middleware global captura cualquier error que se lance en la aplicación y responde con el formato que definí desde el principio:
+
+```json
+{
+  "path": "/ruta/del/endpoint",
+  "message": "descripción del error",
+  "date": "2026-03-22T...",
+  "status": 404
+}
+```
+
+Está registrado al final de todos los middlewares en `app.ts`. Eso es un requisito de Express: el middleware de errores siempre va de último, y debe recibir exactamente 4 parámetros (`error, req, res, next`) para que Express lo reconozca como tal.
+
+### Helper de respuestas — `src/api/helpers/response.ts`
+
+Creé la función `sendSuccess()` para estandarizar todas las respuestas exitosas. El campo `data` solo se incluye en la respuesta si se pasa un valor — así evito que aparezca `"data": undefined` en respuestas que no retornan datos (como un DELETE).
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
