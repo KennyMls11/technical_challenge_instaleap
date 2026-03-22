@@ -150,6 +150,39 @@ También agregué un endpoint `/health` en `app.ts`. Es una práctica estándar 
 
 ---
 
+## Fase 4 — Entidades de base de datos (User y Task)
+
+### ¿Qué hice y por qué?
+
+Con la conexión a la base de datos configurada, el siguiente paso fue definir las entidades: los modelos que TypeORM usa para crear las tablas en PostgreSQL y para hacer las consultas. Sin entidades no hay tablas, y sin tablas no hay nada que guardar.
+
+Creé dos entidades dentro de `src/persistence/entities/`:
+
+### User — `user.entity.ts`
+
+Representa a los usuarios registrados en el sistema. Tiene los campos básicos que pide la prueba: `id`, `nombre`, `email` y `password`. Agregué también `createdAt` y `updatedAt` con los decoradores `@CreateDateColumn` y `@UpdateDateColumn` — TypeORM los gestiona automáticamente y son útiles para saber cuándo se creó o modificó un registro, sin tener que hacerlo manualmente.
+
+El campo `email` tiene `unique: true` para que no puedan existir dos usuarios con el mismo correo. Esto se aplica directamente en la base de datos, no solo en la lógica de la aplicación.
+
+### Task — `task.entity.ts`
+
+Representa las tareas. Tiene los campos que exige la prueba: `id`, `titulo`, `descripcion`, `fecha_vencimiento` y `estado`. Para el estado usé un `enum` de TypeScript (`TaskStatus`) con los tres valores posibles: `pendiente`, `en curso` y `completada`. Esto evita que se guarden valores inválidos en la base de datos.
+
+También incluí `createdAt`, `updatedAt` por las mismas razones que en `User`.
+
+### La relación entre User y Task
+
+Cada tarea pertenece a un único usuario, y un usuario puede tener muchas tareas. Eso se modela con:
+
+- `@ManyToOne` en `Task` → cada tarea apunta a un usuario.
+- `@OneToMany` en `User` → cada usuario tiene una lista de tareas.
+
+Agregué `{ onDelete: 'CASCADE' }` en el `@ManyToOne` para que si un usuario se elimina, sus tareas se eliminen también automáticamente. Esto mantiene la integridad de los datos sin tener que hacerlo manualmente desde el código.
+
+También incluí el campo `userId` en `Task` como columna explícita. Esto permite consultar directamente el ID del usuario dueño de una tarea sin necesidad de hacer un JOIN, lo cual es útil para las validaciones de autorización (verificar que el usuario que pide una tarea es el mismo que la creó).
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
