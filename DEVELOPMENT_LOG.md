@@ -297,6 +297,42 @@ Revisé que el `errorHandler` recibiera los 4 parámetros requeridos por Express
 
 ---
 
+### Uso 4 — Capa de autenticación completa
+
+**Prompt utilizado:**
+> "si" (aprobando el plan previamente presentado para implementar register, login y middleware JWT)
+
+El plan fue construido de forma conjunta: yo indiqué el orden lógico (repository → service → validator → controller → routes → middleware), las restricciones de arquitectura (services sin Express, controllers livianos, persistence solo acceso a datos) y los requisitos específicos de la prueba (solo access token, sin refresh token). Claude lo organizó y ejecutó siguiendo esas directrices.
+
+**Qué se aceptó y por qué:**
+
+Se aceptaron los seis archivos generados:
+
+- **`user.repository.ts`** — usa el patrón `.extend()` de TypeORM, que es la forma idiomática de agregar métodos al repositorio base sin introducir clases adicionales innecesarias. `findByEmail` retorna `User | null` y `createUser` recibe el password ya hasheado — sin lógica de negocio en la capa de datos.
+
+- **`auth.service.ts`** — contiene toda la lógica de negocio sin importar nada de Express. El hasheo con bcrypt ocurre aquí (no en la entidad, como fue rechazado anteriormente). El mensaje de error en el login es intencionalmente genérico para ambos casos (email no existe / contraseña incorrecta) — esto previene que alguien pueda saber si un email está registrado o no. La función `toPublicData` garantiza que el campo `password` nunca salga en ninguna respuesta.
+
+- **`auth.validator.ts`** — usa AJV con `ajv-formats` para validar el formato de email. Los validadores se compilan una sola vez al importar el módulo, no en cada request. Los errores se pasan a `next()` como `ValidationError`, que el `errorHandler` global ya sabe manejar.
+
+- **`auth.controller.ts`** — completamente liviano. Solo extrae datos del body (ya validados por AJV), llama al servicio y responde con `sendSuccess()`. Todo error va a `next(error)`.
+
+- **`auth.routes.ts`** — define los dos endpoints con sus validadores como middlewares encadenados e incluye los comentarios `@swagger` para la documentación automática.
+
+- **`auth.middleware.ts`** — lee el header `Authorization: Bearer <token>`, verifica el JWT con `jwt.verify()` y adjunta `req.user` con el id y email del usuario autenticado. Extiende el tipo `Request` de Express mediante `declare global` para que TypeScript reconozca la propiedad `user` sin errores de tipos.
+
+**Qué se rechazó o modificó:**
+
+La instalación de `ajv-formats` (dependencia adicional requerida para validar el formato de email) la ejecuté yo manualmente:
+```bash
+npm install ajv-formats
+```
+
+**Verificación realizada:**
+
+Revisé que la cadena de responsabilidades fuera correcta en cada archivo: el repositorio no sabe de bcrypt, el service no sabe de Express, el controller no tiene lógica de negocio, y el middleware JWT no toca la base de datos. También confirmé que `auth.middleware.ts` esté disponible para usarse en las rutas de tasks en el siguiente paso, y que `app.ts` quedara actualizado con `authRouter` montado en `/api/v1/auth`.
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
