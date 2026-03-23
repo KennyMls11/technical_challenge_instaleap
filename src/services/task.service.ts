@@ -1,6 +1,6 @@
 import { taskRepository } from '../persistence/repositories/task.repository';
 import { Task, TaskStatus } from '../persistence/entities/task.entity';
-import { NotFoundError, AuthorizationError } from '../api/errors/AppError';
+import { NotFoundError, AuthorizationError, ValidationError } from '../api/errors/AppError';
 
 export interface CreateTaskInput {
   titulo: string;
@@ -23,9 +23,13 @@ export interface UpdateTaskInput {
 export const taskService = {
   /**
    * Retorna todas las tareas del usuario autenticado.
+   * Si se provee un estado, valida que sea válido y filtra por ese valor.
    */
-  async getAll(userId: number): Promise<Task[]> {
-    return taskRepository.findAllByUser(userId);
+  async getAll(userId: number, estado?: string): Promise<Task[]> {
+    if (estado !== undefined && !Object.values(TaskStatus).includes(estado as TaskStatus)) {
+      throw new ValidationError(`Estado inválido. Los valores permitidos son: ${Object.values(TaskStatus).join(', ')}`);
+    }
+    return taskRepository.findAllByUser(userId, estado as TaskStatus | undefined);
   },
 
   /**

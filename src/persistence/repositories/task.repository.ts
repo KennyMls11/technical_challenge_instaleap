@@ -9,9 +9,11 @@ import { Task, TaskStatus } from '../entities/task.entity';
 export const taskRepository = AppDataSource.getRepository(Task).extend({
   /**
    * Retorna todas las tareas que pertenecen a un usuario específico.
+   * Si se provee un estado, filtra por ese valor.
    */
-  async findAllByUser(userId: number): Promise<Task[]> {
-    return this.find({ where: { userId }, order: { createdAt: 'DESC' } });
+  async findAllByUser(userId: number, estado?: TaskStatus): Promise<Task[]> {
+    const where = estado ? { userId, estado } : { userId };
+    return this.find({ where, order: { createdAt: 'DESC' } });
   },
 
   /**

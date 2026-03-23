@@ -16,7 +16,8 @@ export const taskController = {
   async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.id;
-      const tasks = await taskService.getAll(userId);
+      const estado = req.query.estado as string | undefined;
+      const tasks = await taskService.getAll(userId, estado);
       sendSuccess(res, 'Tareas obtenidas exitosamente', tasks);
     } catch (error) {
       next(error);
