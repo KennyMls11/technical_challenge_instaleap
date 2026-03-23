@@ -415,6 +415,56 @@ Se verificaron tanto los casos exitosos como los casos de error:
 
 ---
 
+## Retos y Soluciones
+
+### Entender e implementar el patrón Singleton
+
+El primer reto técnico real fue configurar las variables de entorno usando el patrón Singleton, que no había trabajado antes. Lo primero que hice fue buscar el concepto por mi cuenta — vi este video para entender la idea base antes de tocar código: https://youtu.be/UekxC1hvurk
+
+Una vez que entendí el concepto, me apoyé en Claude para construir el archivo `env.ts`, pero pidiéndole que me explicara línea por línea qué hacía cada parte, no que simplemente me lo generara. El prompt fue:
+
+> "Actúa como un docente de programación, ayúdame a configurar las variables de entorno de mi proyecto, paso a paso describiendo en cada línea lo que se está haciendo para entenderlo"
+
+La respuesta me permitió entender tres cosas clave que ahora puedo defender:
+
+- `dotenv.config()` carga el `.env` en `process.env` al arrancar — después de esa línea, todas las variables ya están disponibles en Node.js.
+- El constructor `private` garantiza que nadie pueda hacer `new EnvConfig()` desde afuera — la única forma de obtener la instancia es por `getInstance()`, que es lo que hace el patrón Singleton.
+- `static getInstance()` tiene la lógica central: si ya existe una instancia la retorna, si no la crea. Eso garantiza que `dotenv.config()` y el constructor solo corran una vez en toda la vida del servidor.
+
+La conclusión que saqué: *"Es una clase que se crea una sola vez, carga el `.env` al arrancar, y expone las variables tipadas para que cualquier parte de la app pueda usarlas sin repetir lógica."*
+
+---
+
+### Docker no arrancaba
+
+Al intentar levantar la base de datos con Docker, el comando me tiraba un error raro sobre un "pipe" que no encontraba. Después de un momento me di cuenta que tenía Docker instalado pero nunca lo había abierto — el motor estaba apagado. Solución obvia en retrospectiva: abrir Docker Desktop y esperar a que cargara antes de correr cualquier comando.
+
+En otro intento escribí `docker -compose` con un espacio en lugar de `docker-compose`. Docker lo interpretó como si le estuviera pasando una opción interna que no existe y el mensaje de error era bastante críptico si no sabés qué estás buscando.
+
+---
+
+### TypeORM no reconocía los decoradores
+
+Cuando empecé a definir las entidades con TypeORM usando la sintaxis de decoradores (`@Entity`, `@Column`, etc.), TypeScript simplemente no los reconocía y lanzaba errores de compilación. El problema era que esa funcionalidad no viene activada por defecto en TypeScript — hay que habilitarla explícitamente en el `tsconfig.json` con `"experimentalDecorators": true` y `"emitDecoratorMetadata": true`. Sin esas dos líneas, TypeORM no funciona y los errores no te dicen directamente qué configuración falta.
+
+---
+
+### Decisión de diseño: dónde hashear la contraseña
+
+Al implementar la autenticación, tuve que decidir dónde poner el hashing de la contraseña. Mi primera intuición fue hacerlo dentro de la entidad `User` con un hook `@BeforeInsert()`, que es una funcionalidad de TypeORM para ejecutar lógica antes de guardar. Pero eso hubiera mezclado lógica de negocio dentro de la capa de persistencia, rompiendo la arquitectura en capas. La solución fue moverlo al servicio (`auth.service.ts`), que es donde pertenece esa lógica.
+
+También entendí por qué el endpoint de login devuelve el mismo mensaje de error tanto si el email no existe como si la contraseña es incorrecta ("Credenciales inválidas"). Al principio parecía poco informativo para el usuario, pero tiene un motivo de seguridad: si el sistema dice "ese email no existe", le estás confirmando a alguien malintencionado qué correos están registrados en tu plataforma. El mensaje genérico protege esa información.
+
+---
+
+### Bug: `estado` y `fecha_vencimiento` no aparecían en la respuesta
+
+Al estar probando los endpoints en Postman, me di cuenta de que al crear una tarea la respuesta no incluía el campo `estado`. El problema estaba en cómo TypeORM maneja los valores por defecto: el decorador `@Column({ default: 'pendiente' })` aplica el default a nivel de base de datos, pero no al objeto JavaScript que se construye en memoria con `this.create()`. Entonces la DB guardaba `pendiente` correctamente, pero el objeto retornado en la respuesta no tenía ese campo seteado.
+
+La solución fue explícita: agregar `estado: TaskStatus.PENDIENTE` directamente en la llamada a `this.create()` dentro del repositorio, de modo que el objeto que se construye en memoria ya tenga el campo desde el inicio, y la respuesta lo incluya correctamente.
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
