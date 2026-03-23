@@ -498,3 +498,9 @@ Decidí usar TypeORM para manejar la conexión y las consultas a la base de dato
 ### 2. PostgreSQL en Docker en lugar de instalación local
 
 Decidí no instalar PostgreSQL directamente en mi máquina, sino levantarlo como un contenedor Docker mediante un archivo `docker-compose.yml`. Esta decisión la tomé porque Docker permite tener un entorno de base de datos limpio, reproducible y fácil de levantar o apagar sin afectar nada más en el sistema. Cualquier persona que clone el repositorio puede tener la base de datos corriendo con un solo comando, sin importar su sistema operativo ni si tiene PostgreSQL instalado. TypeORM se conecta a ese contenedor exactamente igual que si la base de datos estuviera instalada localmente, usando las variables de entorno del archivo `.env`.
+
+### 3. Definición de la arquitectura en capas del proyecto
+
+La arquitectura del proyecto la definí yo antes de comenzar el desarrollo. Decidí estructurar la aplicación en capas con responsabilidades bien delimitadas: rutas y middlewares → controllers → services → persistence. Esta separación garantiza que cada parte del sistema tenga un único propósito claro: los controllers orquestan, los services contienen la lógica de negocio y la capa de persistence es la única que habla con la base de datos.
+
+Esta decisión la tomé porque una arquitectura en capas facilita el mantenimiento, el testing y la escalabilidad del proyecto a medida que crece. También asegura que los cambios en una capa no afecten de forma inesperada a las demás. Estas instrucciones las definí en el archivo `CLAUDE.md` del repositorio para que la IA respetara estrictamente esta estructura al generar código.

@@ -17,33 +17,33 @@ export enum TaskStatus {
 @Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ length: 200 })
-  titulo: string;
+  titulo!: string;
 
   @Column({ type: 'text' })
-  descripcion: string;
+  descripcion!: string;
 
   @Column({ type: 'date' })
-  fecha_vencimiento: Date;
+  fecha_vencimiento!: Date;
 
   @Column({
     type: 'enum',
     enum: TaskStatus,
     default: TaskStatus.PENDIENTE,
   })
-  estado: TaskStatus;
+  estado!: TaskStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @ManyToOne(() => User, (user) => user.tasks, { onDelete: 'CASCADE' })
-  user: User;
+  user!: User;
 
   @Column()
-  userId: number;
+  userId!: number;
 }
