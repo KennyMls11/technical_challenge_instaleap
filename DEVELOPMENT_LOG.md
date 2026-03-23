@@ -465,6 +465,30 @@ La solución fue explícita: agregar `estado: TaskStatus.PENDIENTE` directamente
 
 ---
 
+## Fase 9 — Filtrado de tareas por estado
+
+Al terminar las pruebas con Postman y ver el CRUD funcionando completo, me puse a pensar en cómo se usaría esta API en un contexto real. Un usuario con muchas tareas no querría ver todas mezcladas — necesitaría poder filtrar por estado para ver solo las pendientes, las que están en curso, o las completadas.
+
+Decidí agregar esta funcionalidad como un query parameter opcional en el `GET /tasks`:
+
+```
+GET /api/v1/tasks?estado=pendiente
+GET /api/v1/tasks?estado=en curso
+GET /api/v1/tasks?estado=completada
+```
+
+Si no se envía el parámetro, el endpoint sigue funcionando igual que antes y retorna todas las tareas. Si se envía un valor inválido, responde con `400` y un mensaje que indica cuáles son los valores permitidos.
+
+Los cambios fueron en tres archivos, respetando la arquitectura en capas:
+
+- **`task.repository.ts`** — el método `findAllByUser` ahora acepta un `estado` opcional y lo incluye en el `where` de la consulta si está presente.
+- **`task.service.ts`** — antes de consultar, valida que el valor de `estado` sea uno de los tres permitidos por el enum `TaskStatus`. Si no lo es, lanza un `ValidationError`.
+- **`task.controller.ts`** — extrae el `estado` de `req.query` y lo pasa al servicio.
+
+Esta fue una decisión completamente propia, tomada al terminar las pruebas funcionales y pensar en el uso real de la API.
+
+---
+
 ## Decisiones tomadas de forma independiente (sin asistencia de IA)
 
 ### 1. Uso de TypeORM como ORM
