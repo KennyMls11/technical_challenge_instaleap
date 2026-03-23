@@ -117,12 +117,6 @@ Documentación
 
 ⸻
 
-Commits
-	•	Usar Conventional Commits en todos los commits del proyecto.
-	•	Ejemplos: feat: add user login endpoint, fix: correct task validation schema.
-
-⸻
-
 Buenas prácticas
 	•	Mantener los controllers livianos.
 	•	Centralizar la lógica de negocio en services.
